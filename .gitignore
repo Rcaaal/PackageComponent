@@ -1,0 +1,36 @@
+﻿# 默认忽略的文件
+/shelf/
+/workspace.xml
+# Rider 忽略的文件
+/projectSettingsUpdater.xml
+/modules.xml
+/contentModel.xml
+/.idea.PackageComponent.iml
+# 基于编辑器的 HTTP 客户端请求
+/httpRequests/
+# 已忽略包含查询文件的默认文件夹
+/queries/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+# Unreal Engine 标准忽略规则
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+Build/
+*.pdb
+*.suo
+*.user
+*.sln.DotSettings.user
+.vs/
+.idea/
+*.VC.db
+*.opendb
+# 日志文件
+Logs/
+# 打包输出目录
+Packaged/
+# 本地个人配置文件
+Config/DefaultEditorPerProjectUserSettings.ini
+Config/DefaultEngine.ini.user
