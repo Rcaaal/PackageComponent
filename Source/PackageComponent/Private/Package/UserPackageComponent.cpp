@@ -147,7 +147,7 @@ int32 UUserPackageComponent::RemoveItem(FName ItemID, int32 RemoveCount)
 		{
 			ClearSlot(Slot);
 		}
-		
+	}
 		//计算此次清除Item数量
 		const int32 RemovedCount = RemoveCount - RemoveRemainingCount;
 		if (RemovedCount > 0)
@@ -156,7 +156,6 @@ int32 UUserPackageComponent::RemoveItem(FName ItemID, int32 RemoveCount)
 			OnUserPackageItemRemoved.Broadcast(ItemID,RemovedCount);
 		}
 		return RemovedCount;
-	}
 }
 
 //查询某Item总量（跨格查询）
