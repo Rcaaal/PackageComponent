@@ -1,0 +1,98 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "DataAsset/ItemDataAsset.h"
+#include "UserPackageComponent.generated.h"
+
+//当背包状态改变时回调，用于背包刷新
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnUserPackageComponentChanged);
+//新增时回调
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUserPackageItemAdded,FName,ItemID,int32,AddCount);
+//删除时回调
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUserPackageItemRemoved,FName,ItemID,int32,RemoveCount);
+
+
+UCLASS( ClassGroup=(Custom), BlueprintType, Blueprintable, meta=(BlueprintSpawnableComponent) )
+class PACKAGECOMPONENT_API UUserPackageComponent : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:	
+	// Sets default values for this component's properties
+	UUserPackageComponent();
+
+protected:
+	// Called when the game starts
+	virtual void BeginPlay() override;
+	
+public:
+	//背包格数
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "UserPackage",meta=(ClampMin = "1",UIMin = "1"))
+	int32 PackageSlotNum = 30;
+
+	//拾取道具的信息
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "UserPackage | Data")
+	TArray<TObjectPtr<UItemDataAsset>> ItemDataBase;
+	
+	//背包插槽 结构体定义来自UItemDataAsset
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "UserPackage")
+	TArray<FInventorySlot> Slots;
+	
+	//背包事件 回调
+	UPROPERTY(BlueprintAssignable,Category = "UserPackage | Event")
+	FOnUserPackageComponentChanged OnUserPackageComponentChanged;
+	
+	//背包新增 回调
+	UPROPERTY(BlueprintAssignable,Category = "UserPackage | Event")
+	FOnUserPackageItemAdded OnUserPackageItemAdded;
+	
+	//背包删减 回调
+	UPROPERTY(BlueprintAssignable,Category = "UserPackage | Event")
+	FOnUserPackageItemRemoved OnUserPackageItemRemoved;
+	
+	//背包初始化 参数大于0则使用传入参数 否则使用默认值
+	UFUNCTION(BlueprintCallable,Category= "UserPackage")
+	void InitPackage(int InitSlotNums = -1);
+	
+	///新增道具
+	UFUNCTION(BlueprintCallable,Category= "UserPackage")
+	int32 AddItem(FName ItemID,int32 AddCount);
+	
+	//移除道具
+	UFUNCTION(BlueprintCallable,Category= "UserPackage")
+	int32 RemoveItem(FName ItemID,int32 RemoveCount);
+	
+	//获取某个Item在背包中的数量总合
+	UFUNCTION(BlueprintPure,Category= "UserPackage")
+	int32 GetItemTotalCount(FName ItemID) const;
+	
+	//获取当前是否满足条件消耗某个Item（Item使用时）
+	UFUNCTION(BlueprintPure,Category= "UserPackage")
+	bool CanConsumeItem(FName ItemID,int32 ConsumeCount) const;
+	
+	//获取当前是否可以加入某个Item（Item加入时）
+	UFUNCTION(BlueprintPure,Category= "UserPackage")
+	bool CanAddItem(FName ItemID,int32 AddCount) const;
+	
+	//获取空余可用Slot数量
+	UFUNCTION(BlueprintPure,Category= "UserPackage")
+	int32 GetEmptySlotCount() const;
+	
+	//返回背包引用 用于刷新UI/调试/只读判断
+	UFUNCTION(BlueprintPure,Category= "UserPackage")
+	const TArray<FInventorySlot>& GetSlots() const;
+	
+private:
+	//获取某Item的最大堆叠数 通过DataAsset获取 用于AddItem/CanAddItem
+	int32 GetMaxStackCount(FName ItemID) const;
+	
+	//清理某Slot 通常在RemoveItem后堆叠为0的时候调用
+	void ClearSlot(FInventorySlot& Slot);
+	
+	//向某个格子中写入信息
+	void SetSlotItem(FInventorySlot& Slot,FName ItemID,int32 Count);
+		
+};

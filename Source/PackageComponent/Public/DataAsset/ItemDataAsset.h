@@ -61,7 +61,7 @@ struct PACKAGECOMPONENT_API FItemInstance
 	}
 };
 
-//结构体 用于表示package中一个格子当前的状态信息
+//结构体 用于表示Package中一个格子当前的状态信息
 USTRUCT(BlueprintType)
 struct PACKAGECOMPONENT_API FInventorySlot
 {
