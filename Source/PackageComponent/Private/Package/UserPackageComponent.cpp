@@ -37,6 +37,11 @@ void UUserPackageComponent::BeginPlay()
 	}
 }
 
+void UUserPackageComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+}
+
 void UUserPackageComponent::InitPackage(int InitSlotNums)
 {
 	if (InitSlotNums > 0)
