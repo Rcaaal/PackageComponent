@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "EnhancedInputSubsystems.h"
+#include "Character/BaseCanPickCharacter.h"
 #include "Engine/LocalPlayer.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -53,6 +54,9 @@ void APackageComponentPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(SetDestinationTouchAction, ETriggerEvent::Triggered, this, &APackageComponentPlayerController::OnTouchTriggered);
 		EnhancedInputComponent->BindAction(SetDestinationTouchAction, ETriggerEvent::Completed, this, &APackageComponentPlayerController::OnTouchReleased);
 		EnhancedInputComponent->BindAction(SetDestinationTouchAction, ETriggerEvent::Canceled, this, &APackageComponentPlayerController::OnTouchReleased);
+		
+		//Setup pickup input events
+		EnhancedInputComponent->BindAction(PickupAction, ETriggerEvent::Started, this, &APackageComponentPlayerController::OnPickupPressed);
 	}
 	else
 	{
@@ -122,4 +126,12 @@ void APackageComponentPlayerController::OnTouchReleased()
 {
 	bIsTouch = false;
 	OnSetDestinationReleased();
+}
+
+void APackageComponentPlayerController::OnPickupPressed(const FInputActionValue& Value)
+{
+	if (ABaseCanPickCharacter* PickupCharacter = Cast<ABaseCanPickCharacter>(GetPawn()))
+	{
+		PickupCharacter->TryPickupNow();
+	}
 }

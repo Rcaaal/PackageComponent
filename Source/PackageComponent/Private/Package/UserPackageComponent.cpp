@@ -20,9 +20,20 @@ void UUserPackageComponent::BeginPlay()
 	Super::BeginPlay();
 
 	// ...
+	//初始化Package
 	if (Slots.Num() != PackageSlotNum)
 	{
 		InitPackage(PackageSlotNum);
+	}
+	
+	//读取ItemTable
+	if (bAutoLoadItemDatabaseFromDataTable)
+	{
+		RebuildItemDatabaseFromDataTable(bAppendWhenAutoLoad, bSyncLoadSoftRef);
+	}
+	else
+	{
+		RebuildItemLookup();
 	}
 }
 
@@ -237,6 +248,33 @@ const TArray<FInventorySlot>& UUserPackageComponent::GetSlots() const
 	return Slots;
 }
 
+void UUserPackageComponent::RebuildItemDatabaseFromDataTable(bool bAppend, bool bLoadSync)
+{
+	if (!bAppend)
+	{
+		ItemDataBase.Reset();
+	}
+	if (!ItemDataTable)
+	{
+		RebuildItemLookup();
+		return;
+	}
+	const TArray<FName> RowNames = ItemDataTable->GetRowNames();
+	for (const FName& RowName : RowNames)
+	{
+		const FUserPackageItemRow* Row = ItemDataTable->FindRow<FUserPackageItemRow>(RowName,TEXT("RebuildItemDatabaseFromDataTable"));
+
+		if (!Row)
+		{
+			continue;
+		}
+		
+		UItemDataAsset* LoadedData = bLoadSync ? Row->ItemData.LoadSynchronous() : Row->ItemData.Get();
+		AddItemDataUnique(LoadedData);
+	}
+	RebuildItemLookup();
+}
+
 int32 UUserPackageComponent::GetMaxStackCount(FName ItemID) const
 {
 	//从DataAsset获取ItemID对应的MaxStack（常量）
@@ -266,6 +304,36 @@ void UUserPackageComponent::SetSlotItem(FInventorySlot& Slot, FName ItemID, int3
 	Slot.bOccupied = true;
 	Slot.ItemInstance.ItemID = ItemID;
 	Slot.ItemInstance.Count = FMath::Max(1,Count);
+}
+
+void UUserPackageComponent::RebuildItemLookup()
+{
+	ItemLookupMap.Reset();
+	
+	for (UItemDataAsset* Data : ItemDataBase)
+	{
+		if (!Data || Data->ItemID.IsNone())
+		{
+			continue;
+		}
+		ItemLookupMap.FindOrAdd(Data->ItemID) = Data;
+	}
+}
+
+void UUserPackageComponent::AddItemDataUnique(UItemDataAsset* InItemData)
+{
+	if (!InItemData || InItemData->ItemID.IsNone())
+	{
+		return;
+	}
+	for (const UItemDataAsset* DataAsset : ItemDataBase)
+	{
+		if (DataAsset == InItemData)
+		{
+			return;
+		}
+	}
+	ItemDataBase.Add(InItemData);
 }
 
 

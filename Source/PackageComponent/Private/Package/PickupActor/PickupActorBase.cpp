@@ -3,8 +3,10 @@
 
 #include "Package/PickupActor/PickupActorBase.h"
 
+#include "Character/BaseCanPickCharacter.h"
 #include "Components/SphereComponent.h"
 #include "DataAsset/ItemDataAsset.h"
+#include "Package/UserPackageComponent.h"
 
 // Sets default values
 APickupActorBase::APickupActorBase()
@@ -22,6 +24,9 @@ APickupActorBase::APickupActorBase()
 	InteractorComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
 	InteractorComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	InteractorComponent->SetSphereRadius(100.f);
+	
+	InteractorComponent->OnComponentBeginOverlap.AddDynamic(this,&APickupActorBase::OnBeginOverlap);
+	InteractorComponent->OnComponentEndOverlap.AddDynamic(this,&APickupActorBase::OnEndOverlap);
 }
 
 bool APickupActorBase::CanInteract(AActor* Interactor) const
@@ -40,6 +45,20 @@ bool APickupActorBase::TryPickup(AActor* Interactor)
 		OnPickupFailed(Interactor,Reason);
 		return false;
 	}
+	
+	//26427 Package组件完成后 PickupActor尝试调用Package组件
+	UUserPackageComponent* Package = Interactor->FindComponentByClass<UUserPackageComponent>();
+	if (!Package)
+	{
+		//Interactor无Package导致失败
+		Reason = EPickupFailReason::AddToInventoryFailed;
+		PickupFailed.Broadcast(Interactor,Reason);
+		OnPickupFailed(Interactor,Reason);
+		return false;
+	}
+	
+	//清除原有蓝图拾取逻辑
+	/*
 	//通过拾取校验
 	int32 AcceptedCount = 0;
 	const bool bAdded = K2_RequestAddItemToInteractor(Interactor,ItemData->ItemID,Count,AcceptedCount);
@@ -51,8 +70,19 @@ bool APickupActorBase::TryPickup(AActor* Interactor)
 		PickupFailed.Broadcast(Interactor,Reason);
 		OnPickupFailed(Interactor,Reason);
 		return false;
+	} 
+	 */
+
+	//调用添加逻辑获取添加数量
+	const int32 AcceptedCount = Package->AddItem(ItemData->ItemID,Count);
+	//未添加成功
+	if (AcceptedCount <= 0)
+	{
+		Reason = EPickupFailReason::AddToInventoryFailed;
+		PickupFailed.Broadcast(Interactor,Reason);
+		OnPickupFailed(Interactor,Reason);
+		return false;
 	}
-	
 	//拾取成功
 	PickupSucceeded.Broadcast(Interactor,AcceptedCount);
 	OnPickupSuccess(Interactor,AcceptedCount);
@@ -96,7 +126,7 @@ bool APickupActorBase::ValidatePickup(AActor* Interactor, EPickupFailReason& Fai
 		FailReason = EPickupFailReason::OutOfRange;
 		return false;
 	}
-	if (!ItemData || ItemData->ItemID.IsValid())
+	if (!ItemData || ItemData->ItemID.IsNone())
 	{
 		FailReason = EPickupFailReason::InvalidItemData;
 		return false;
@@ -125,4 +155,22 @@ bool APickupActorBase::IsInteractorInRange(AActor* Interactor) const
 	const float Distance = FVector::DistSquared(Interactor->GetActorLocation(),GetActorLocation());
 	//计算距离平方和预设可拾取距离平方的大小
 	return Distance <= FMath::Square(MaxInteractorDis);
+}
+
+void APickupActorBase::OnBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (ABaseCanPickCharacter* Character = Cast<ABaseCanPickCharacter>(OtherActor))
+	{
+		Character->SetCurrentPick(this);
+	}
+}
+
+void APickupActorBase::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (ABaseCanPickCharacter* Character = Cast<ABaseCanPickCharacter>(OtherActor))
+	{
+		Character->ClearCurrentPick(this);
+	}
 }

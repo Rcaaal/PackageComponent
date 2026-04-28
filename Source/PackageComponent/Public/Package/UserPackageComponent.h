@@ -7,6 +7,16 @@
 #include "DataAsset/ItemDataAsset.h"
 #include "UserPackageComponent.generated.h"
 
+//用于参数表格
+USTRUCT(BlueprintType)
+struct FUserPackageItemRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UserPackage|DataTable")
+	TSoftObjectPtr<UItemDataAsset> ItemData;
+};
+
 //当背包状态改变时回调，用于背包刷新
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnUserPackageComponentChanged);
 //新增时回调
@@ -33,9 +43,25 @@ public:
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "UserPackage",meta=(ClampMin = "1",UIMin = "1"))
 	int32 PackageSlotNum = 30;
 
-	//拾取道具的信息
+	//拾取道具的信息 手动补充数据库
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "UserPackage | Data")
 	TArray<TObjectPtr<UItemDataAsset>> ItemDataBase;
+	
+	// DataTable 数据源（推荐）
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Package|DataTable")
+	TObjectPtr<UDataTable> ItemDataTable = nullptr;
+
+	// BeginPlay 自动从 DataTable 构建 ItemDataBase
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UserPackage|DataTable")
+	bool bAutoLoadItemDatabaseFromDataTable = true;
+
+	// true: 追加到 ItemDataBase；false: 覆盖 ItemDataBase
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UserPackage|DataTable")
+	bool bAppendWhenAutoLoad = false;
+
+	// true: 同步加载软引用（推荐 true）
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UserPackage|DataTable")
+	bool bSyncLoadSoftRef = true;
 	
 	//背包插槽 结构体定义来自UItemDataAsset
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "UserPackage")
@@ -85,6 +111,9 @@ public:
 	UFUNCTION(BlueprintPure,Category= "UserPackage")
 	const TArray<FInventorySlot>& GetSlots() const;
 	
+	// 手动重建数据库（Blueprint 可调用）
+	UFUNCTION(BlueprintCallable, Category="Package|DataTable")
+	void RebuildItemDatabaseFromDataTable(bool bAppend = false, bool bLoadSync = true);
 private:
 	//获取某Item的最大堆叠数 通过DataAsset获取 用于AddItem/CanAddItem
 	int32 GetMaxStackCount(FName ItemID) const;
@@ -94,5 +123,10 @@ private:
 	
 	//向某个格子中写入信息
 	void SetSlotItem(FInventorySlot& Slot,FName ItemID,int32 Count);
-		
+
+	//用于数据读取
+	void RebuildItemLookup();
+	void AddItemDataUnique(UItemDataAsset* InItemData);
+	UPROPERTY(Transient)
+	TMap<FName, TObjectPtr<UItemDataAsset>> ItemLookupMap;
 };
