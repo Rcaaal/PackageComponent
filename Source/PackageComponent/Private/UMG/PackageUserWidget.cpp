@@ -71,8 +71,8 @@ void UPackageUserWidget::RefreshAllSlots()
 		
 		if (UUniformGridSlot* GridSlot = Grid_Items->AddChildToUniformGrid(SlotWidget,Row,Column))
 		{
-			GridSlot->SetHorizontalAlignment(HAlign_Fill);
-			GridSlot->SetVerticalAlignment(VAlign_Fill);
+			GridSlot->SetHorizontalAlignment(HAlign_Left);
+			GridSlot->SetVerticalAlignment(VAlign_Top);
 		}
 		
 		++VisibleSlotIndex;

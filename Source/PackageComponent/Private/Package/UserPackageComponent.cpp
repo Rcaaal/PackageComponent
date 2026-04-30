@@ -3,6 +3,8 @@
 
 #include "Package/UserPackageComponent.h"
 
+#include "UMG/PackageUserWidget.h"
+
 // Sets default values for this component's properties
 UUserPackageComponent::UUserPackageComponent()
 {
@@ -339,6 +341,103 @@ void UUserPackageComponent::AddItemDataUnique(UItemDataAsset* InItemData)
 		}
 	}
 	ItemDataBase.Add(InItemData);
+}
+
+void UUserPackageComponent::TogglePackageUI()
+{
+	if (!bPackageUIVisible)
+	{
+		ShowPackageUI();
+	}
+	else
+	{
+		HidePackageUI();
+	}
+}
+
+void UUserPackageComponent::ShowPackageUI()
+{
+	CreatePackageUI();
+	if (!PackageWidgetInstance)
+	{
+		return;
+	}
+
+	bPackageUIVisible = true;
+	PackageWidgetInstance->SetVisibility(ESlateVisibility::Visible);
+
+	if (APlayerController* PC = GetLocalPlayerController())
+	{
+		FInputModeGameAndUI Mode;
+		Mode.SetHideCursorDuringCapture(false);
+		PC->SetInputMode(Mode);
+		PC->bShowMouseCursor = true;
+	}
+}
+
+void UUserPackageComponent::HidePackageUI()
+{
+	if (!PackageWidgetInstance)
+	{
+		return;
+	}
+
+	bPackageUIVisible = false;
+	PackageWidgetInstance->SetVisibility(PackageVisibility);
+
+	if (APlayerController* PC = GetLocalPlayerController())
+	{
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->bShowMouseCursor = false;
+	}
+}
+
+bool UUserPackageComponent::IsPackageUIVisible() const
+{
+	return bPackageUIVisible;
+}
+
+void UUserPackageComponent::CreatePackageUI()
+{
+	if (!bEnablePackageUI || !PackageWidgetClass || PackageWidgetInstance)
+	{
+		return;
+	}
+	APlayerController* PC = GetLocalPlayerController();
+	if (!PC || !PC->IsLocalController())
+	{
+		return;
+	}
+	PackageWidgetInstance = CreateWidget<UPackageUserWidget>(PC,PackageWidgetClass);
+	if (PackageWidgetInstance)
+	{
+		PackageWidgetInstance->AddToViewport();
+		PackageWidgetInstance->SetVisibility(PackageVisibility);
+
+		PackageWidgetInstance->InitWithPackageComponent(this);
+		bPackageUIVisible = false;
+	}
+	else
+	{
+		return;
+	}
+	
+}
+
+APlayerController* UUserPackageComponent::GetLocalPlayerController()
+{
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor)
+	{
+		return nullptr;
+	}
+
+	if (APawn* OwnerPawn = Cast<APawn>(OwnerActor))
+	{
+		return Cast<APlayerController>(OwnerPawn->GetController());
+	}
+
+	return Cast<APlayerController>(OwnerActor->GetInstigatorController());
 }
 
 

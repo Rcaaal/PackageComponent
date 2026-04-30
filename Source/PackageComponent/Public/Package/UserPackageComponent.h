@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Components/SlateWrapperTypes.h"
 #include "DataAsset/ItemDataAsset.h"
 #include "UserPackageComponent.generated.h"
 
+class UPackageUserWidget;
 //用于参数表格
 USTRUCT(BlueprintType)
 struct FUserPackageItemRow : public FTableRowBase
@@ -129,4 +131,51 @@ private:
 	void AddItemDataUnique(UItemDataAsset* InItemData);
 	UPROPERTY(Transient)
 	TMap<FName, TObjectPtr<UItemDataAsset>> ItemLookupMap;
+
+public:
+	//UI
+	//是否启用PackageUI
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UserPackage|UI")
+	bool bEnablePackageUI = true;
+
+	//背包UI类
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UserPackage|UI")
+	TSubclassOf<UPackageUserWidget> PackageWidgetClass;
+
+	//UI可见性
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="UserPackage|UI")
+	ESlateVisibility PackageVisibility = ESlateVisibility::Collapsed;
+
+	//背包显示状态切换
+	UFUNCTION(BlueprintCallable,Category="UserPackage|UI")
+	void TogglePackageUI();
+
+	//显示背包
+	UFUNCTION(BlueprintCallable,Category="UserPackage|UI")
+	void ShowPackageUI();
+
+	//隐藏背包
+	UFUNCTION(BlueprintCallable,Category="UserPackage|UI")
+	void HidePackageUI();
+
+	//获取当前可见性
+	UFUNCTION(BlueprintCallable,Category="UserPackage|UI")
+	bool IsPackageUIVisible() const;
+
+	//获取UI实例
+	UFUNCTION(BlueprintCallable,Category="UserPackage|UI")
+	UPackageUserWidget* GetPackageUIWidget() const { return PackageWidgetInstance; };
+
+private:
+	//UI实例
+	//不参与序列化 不参与网络复制
+	UPROPERTY(Transient)
+	TObjectPtr<UPackageUserWidget> PackageWidgetInstance = nullptr;
+
+	//当前Package是否显示
+	bool bPackageUIVisible = false;
+
+	void CreatePackageUI();
+
+	APlayerController* GetLocalPlayerController();
 };
