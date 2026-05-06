@@ -12,6 +12,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Character/BaseCanPickCharacter.h"
 #include "Engine/LocalPlayer.h"
+#include "Package/UserPackageComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -57,6 +58,9 @@ void APackageComponentPlayerController::SetupInputComponent()
 		
 		//Setup pickup input events
 		EnhancedInputComponent->BindAction(PickupAction, ETriggerEvent::Started, this, &APackageComponentPlayerController::OnPickupPressed);
+
+		//Setup PackageUI input events
+		EnhancedInputComponent->BindAction(PackageUIAction, ETriggerEvent::Started, this, &APackageComponentPlayerController::OnTogglePackage);
 	}
 	else
 	{
@@ -133,5 +137,19 @@ void APackageComponentPlayerController::OnPickupPressed(const FInputActionValue&
 	if (ABaseCanPickCharacter* PickupCharacter = Cast<ABaseCanPickCharacter>(GetPawn()))
 	{
 		PickupCharacter->TryPickupNow();
+	}
+}
+
+void APackageComponentPlayerController::OnTogglePackage(const FInputActionValue& Value)
+{
+	APawn* MyPawn = GetPawn();
+	if (!MyPawn)
+	{
+		return;
+	}
+
+	if (UUserPackageComponent* PackageComp = MyPawn->FindComponentByClass<UUserPackageComponent>())
+	{
+		PackageComp->TogglePackageUI();
 	}
 }

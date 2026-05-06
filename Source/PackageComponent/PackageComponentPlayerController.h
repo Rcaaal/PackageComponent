@@ -46,6 +46,10 @@ public:
 	/*Pickup Input Action*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> PickupAction = nullptr;
+
+	/*PackageUI Input Action*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> PackageUIAction = nullptr;
 protected:
 	/** True if the controlled character should navigate to the mouse cursor. */
 	uint32 bMoveToMouseCursor : 1;
@@ -71,6 +75,9 @@ private:
 private:
 	//拾取相关
 	void OnPickupPressed(const FInputActionValue& Value);
+
+	//启用PackageUI
+	void OnTogglePackage(const FInputActionValue& Value);
 };
 
 

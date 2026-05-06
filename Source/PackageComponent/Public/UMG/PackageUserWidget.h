@@ -7,7 +7,7 @@
 #include "DataAsset/ItemDataAsset.h"
 #include "PackageUserWidget.generated.h"
 
-class UUniformGridPanel;
+class UWrapBox;
 class UPackageSlotUserWidget;
 class UUserPackageComponent;
 
@@ -52,7 +52,7 @@ protected:
 	
 	//网格排布
 	UPROPERTY(meta=(BindWidget))
-	TObjectPtr<UUniformGridPanel> Grid_Items = nullptr;
+	TObjectPtr<UWrapBox> Wrap_Items = nullptr;
 	
 	//单格Widget（需在BP中指定）
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="PackageUI")
@@ -61,6 +61,12 @@ protected:
 	//每行SlotWidget数量  固定为5
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="PackageUI")
 	int32 ColumnCount = 5;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="PackageUI|Layout", meta=(ClampMin="1.0", UIMin="1.0"))
+	float SlotSize = 64.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="PackageUI|Layout", meta=(ClampMin="0.0", UIMin="0.0"))
+	float SlotSpacing = 4.0f;
 	
 	//绑定背包组件
 	UPROPERTY(BlueprintReadOnly,Category="PackageUI")

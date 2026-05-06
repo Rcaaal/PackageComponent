@@ -13,6 +13,7 @@ void UPackageSlotUserWidget::SetSlotData(UTexture2D* InIcon, int32 InCount)
 	}
 	if (Text_Count)
 	{
-		Text_Count->SetText(FText::AsNumber(FMath::Max(0,InCount)));
+		const int32 SafeCount = FMath::Max(0,InCount);
+		Text_Count->SetText(FText::AsNumber(SafeCount));
 	}
 }
