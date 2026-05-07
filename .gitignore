@@ -19,6 +19,7 @@ Intermediate/
 Saved/
 DerivedDataCache/
 Build/
+AI/
 *.pdb
 *.suo
 *.user
@@ -34,3 +35,8 @@ Packaged/
 # 本地个人配置文件
 Config/DefaultEditorPerProjectUserSettings.ini
 Config/DefaultEngine.ini.user
+# 忽略Visual Studio解决方案文件和项目文件
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
