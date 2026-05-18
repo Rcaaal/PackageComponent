@@ -3,9 +3,7 @@
 #include "PackageComponentPlayerController.h"
 #include "GameFramework/Pawn.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
-#include "NiagaraSystem.h"
 #include "NiagaraFunctionLibrary.h"
-#include "PackageComponentCharacter.h"
 #include "Engine/World.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
@@ -13,6 +11,7 @@
 #include "Character/BaseCanPickCharacter.h"
 #include "Engine/LocalPlayer.h"
 #include "Package/UserPackageComponent.h"
+#include "UMG/BaseUserWidget.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -33,6 +32,15 @@ void APackageComponentPlayerController::BeginPlay()
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
 		Subsystem->AddMappingContext(DefaultMappingContext, 0);
+	}
+
+	if (IsLocalController() && BaseUMGClass)
+	{
+		BaseUMGInstance = CreateWidget<UBaseUserWidget>(this, BaseUMGClass);
+		if (BaseUMGInstance)
+		{
+			BaseUMGInstance->AddToViewport(0);
+		}
 	}
 }
 

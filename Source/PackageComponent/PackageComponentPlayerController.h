@@ -12,6 +12,7 @@
 class UNiagaraSystem;
 class UInputMappingContext;
 class UInputAction;
+class UBaseUserWidget;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -78,6 +79,14 @@ private:
 
 	//启用PackageUI
 	void OnTogglePackage(const FInputActionValue& Value);
+	
+protected:
+	UPROPERTY(EditDefaultsOnly,Category = "UI")
+	TSubclassOf<UBaseUserWidget> BaseUMGClass;
+	
+private:
+	UPROPERTY()
+	TObjectPtr<UBaseUserWidget> BaseUMGInstance = nullptr;
 };
 
 
