@@ -13,6 +13,22 @@ class APackageComponentGameMode : public AGameModeBase
 
 public:
 	APackageComponentGameMode();
+	
+	virtual void BeginPlay() override;
+	
+	UFUNCTION(BlueprintCallable, Category = "Count")
+	void TriggerStartCount(float InDurationSeconds = -1.f);
+	
+protected:
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Count")
+	float StartCountDuration = 60.f;
+	
+private:
+	UFUNCTION()
+	void HandleCountTick(float RemainingSeconds);
+	
+	UFUNCTION()
+	void HandleCountFinished();
 };
 
 

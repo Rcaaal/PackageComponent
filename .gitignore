@@ -19,6 +19,7 @@ Intermediate/
 Saved/
 DerivedDataCache/
 Build/
+Content/
 AI/
 *.pdb
 *.suo
