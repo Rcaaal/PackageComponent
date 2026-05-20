@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -8,6 +8,7 @@
 #include "DataAsset/ItemDataAsset.h"
 #include "UserPackageComponent.generated.h"
 
+class APickupActorBase;
 class UPackageUserWidget;
 //用于参数表格
 USTRUCT(BlueprintType)
@@ -108,6 +109,10 @@ public:
 	//获取空余可用Slot数量
 	UFUNCTION(BlueprintPure,Category= "UserPackage")
 	int32 GetEmptySlotCount() const;
+
+	//通过 ItemID 查询对应数据资产
+	UFUNCTION(BlueprintPure,Category= "UserPackage")
+	UItemDataAsset* FindItemDataByID(FName ItemID) const;
 	
 	//返回背包引用 用于刷新UI/调试/只读判断
 	UFUNCTION(BlueprintPure,Category= "UserPackage")
@@ -166,6 +171,13 @@ public:
 	UFUNCTION(BlueprintCallable,Category="UserPackage|UI")
 	UPackageUserWidget* GetPackageUIWidget() const { return PackageWidgetInstance; };
 
+	//使用道具（执行道具效果并扣除1个）
+	UFUNCTION(BlueprintCallable, Category="UserPackage")
+	bool UseItem(FName ItemID, AActor* TargetActor);
+
+	UFUNCTION(BlueprintCallable, Category="UserPackage")
+	bool DropItem(FName ItemID, int32 DropCount, FVector Origin);
+	
 private:
 	//UI实例
 	//不参与序列化 不参与网络复制

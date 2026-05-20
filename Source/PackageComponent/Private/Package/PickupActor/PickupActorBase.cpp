@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Package/PickupActor/PickupActorBase.h"
@@ -103,6 +103,12 @@ FText APickupActorBase::GetInteractorText() const
 	
 	//成功拾取后返回文本 格式为 [拾取 “DisplayName” x “count”]
 	return FText::Format(FText::FromString(TEXT("拾取 {0} x {1}")),ItemData->DisplayName,FText::AsNumber(Count));
+}
+
+void APickupActorBase::InitWhenDrop(UItemDataAsset* InItemData, int32 InCount)
+{
+	ItemData = InItemData;
+	Count = FMath::Max(1,InCount);
 }
 
 // Called when the game starts or when spawned

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -6,6 +6,8 @@
 #include "Engine/DataAsset.h"
 #include "ItemDataAsset.generated.h"
 
+class APickupActorBase;
+class UItemEffectBase;
 /**
  * 
  */
@@ -39,7 +41,8 @@ struct PACKAGECOMPONENT_API FItemCustomData
 
 //结构体 用于存储道具实例的信息
 USTRUCT(BlueprintType)
-struct PACKAGECOMPONENT_API FItemInstance
+struct PACKAGECOMPONENT_API 
+FItemInstance
 {
 	GENERATED_BODY()
 	
@@ -129,4 +132,16 @@ public:
 	
 	//给AssetManager用 用于标明此Asset的名称和归类
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override;
+	
+	//Item Effect
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Instanced,Category="Item | Effect")
+	TArray<TObjectPtr<UItemEffectBase>> ItemEffects;
+	
+	//配置掉落类 主要用于丢弃时生成
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Item|Drop")
+	TSubclassOf<APickupActorBase> PickupClass;
+	
+	//优先级 用于Package排序显示
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category="Item|UI")
+	int32 UIPriority = 0;
 };

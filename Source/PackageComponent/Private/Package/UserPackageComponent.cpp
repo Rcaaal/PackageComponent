@@ -1,8 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Package/UserPackageComponent.h"
 
+#include "DataAsset/ItemEffectBase.h"
+#include "Package/PickupActor/PickupActorBase.h"
 #include "UMG/PackageUserWidget.h"
 
 // Sets default values for this component's properties
@@ -250,6 +252,23 @@ int32 UUserPackageComponent::GetEmptySlotCount() const
 	return EmptySlotCount;
 }
 
+UItemDataAsset* UUserPackageComponent::FindItemDataByID(FName ItemID) const
+{
+	if (ItemID.IsNone())
+	{
+		return nullptr;
+	}
+
+	for (UItemDataAsset* Data : ItemDataBase)
+	{
+		if (Data && Data->ItemID == ItemID)
+		{
+			return Data;
+		}
+	}
+	return nullptr;
+}
+
 const TArray<FInventorySlot>& UUserPackageComponent::GetSlots() const
 {
 	return Slots;
@@ -397,6 +416,134 @@ bool UUserPackageComponent::IsPackageUIVisible() const
 	return bPackageUIVisible;
 }
 
+bool UUserPackageComponent::UseItem(FName ItemID, AActor* TargetActor)
+{
+	if (ItemID.IsNone() || !TargetActor)
+	{
+		return false;
+	}
+	if (GetItemTotalCount(ItemID) <= 0)
+	{
+		return false;
+	}
+
+	UItemDataAsset* ItemDataAsset = FindItemDataByID(ItemID);
+	if (!ItemDataAsset)
+	{
+		return false;
+	}
+
+	// 先全部校验通过，再执行效果，避免部分成功部分失败
+	for (UItemEffectBase* Effect : ItemDataAsset->ItemEffects)
+	{
+		if (!Effect)
+		{
+			continue;
+		}
+		if (!Effect->CanApply(TargetActor))
+		{
+			return false;
+		}
+	}
+
+	for (UItemEffectBase* Effect : ItemDataAsset->ItemEffects)
+	{
+		if (Effect)
+		{
+			Effect->ApplyEffect(TargetActor);
+		}
+	}
+
+	return RemoveItem(ItemID, 1) > 0;
+}
+
+bool UUserPackageComponent::DropItem(FName ItemID, int32 DropCount, FVector Origin)
+{
+	if (ItemID.IsNone() || DropCount <= 0)
+	{
+		return false;
+	}
+	if (GetItemTotalCount(ItemID) < DropCount)
+	{
+		return false;
+	}
+	UItemDataAsset* ItemData = FindItemDataByID(ItemID);
+	if (!ItemData)
+	{
+		return false;
+	}
+	
+	TSubclassOf<APickupActorBase> DropActorClass = ItemData->PickupClass;
+	if (!DropActorClass)
+	{
+		return false;
+	}
+	
+	if (RemoveItem(ItemID,DropCount) <= 0)
+	{
+		return false;
+	}
+	const FVector Base = Origin + FVector(0,0,20.f);
+	const float MinR = 90.f;
+	const float MaxR = 180.f;
+	FVector SpawnLoc = Base;
+	bool bFound = false;
+
+	// 随机环形采样，尽量避免重叠
+	for (int32 TryIdx = 0; TryIdx < 8; ++TryIdx)
+	{
+		const float Angle = FMath::FRandRange(0.f, 2.f * PI);
+		const float Radius = FMath::FRandRange(MinR, MaxR);
+
+		const FVector Candidate = Base + FVector(
+			FMath::Cos(Angle) * Radius,
+			FMath::Sin(Angle) * Radius,
+			0.f
+		);
+
+		TArray<FOverlapResult> Hits;
+		FCollisionQueryParams Params(SCENE_QUERY_STAT(DropCheck), false);
+		const bool bOverlap = GetWorld()->OverlapMultiByObjectType(
+			Hits,
+			Candidate,
+			FQuat::Identity,
+			FCollisionObjectQueryParams(FCollisionObjectQueryParams::AllDynamicObjects),
+			FCollisionShape::MakeSphere(35.f),
+			Params
+		);
+
+		if (!bOverlap)
+		{
+			SpawnLoc = Candidate;
+			bFound = true;
+			break;
+		}
+	}
+
+	// 找不到就兜底随机点
+	if (!bFound)
+	{
+		SpawnLoc = Base + FVector(
+			FMath::FRandRange(-80.f, 80.f),
+			FMath::FRandRange(-80.f, 80.f),
+			0.f
+		);
+	}
+
+	APickupActorBase* Pickup = GetWorld()->SpawnActor<APickupActorBase>(
+		DropActorClass,
+		SpawnLoc,
+		FRotator::ZeroRotator
+	);
+	if (!Pickup)
+	{
+		return false;
+	}
+
+	Pickup->InitWhenDrop(ItemData, DropCount);
+	return true;
+}
+
 void UUserPackageComponent::CreatePackageUI()
 {
 	if (!bEnablePackageUI || !PackageWidgetClass || PackageWidgetInstance)
@@ -439,5 +586,3 @@ APlayerController* UUserPackageComponent::GetLocalPlayerController()
 
 	return Cast<APlayerController>(OwnerActor->GetInstigatorController());
 }
-
-

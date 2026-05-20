@@ -51,7 +51,7 @@ void UPackageUserWidget::RefreshAllSlots()
 			continue;
 		}
 
-		UItemDataAsset* ItemData = FindItemDataByID(InventorySlot.ItemInstance.ItemID);
+		UItemDataAsset* ItemData = PackageComp->FindItemDataByID(InventorySlot.ItemInstance.ItemID);
 		UTexture2D* IconTexture = nullptr;
 		if (ItemData)
 		{
@@ -64,7 +64,10 @@ void UPackageUserWidget::RefreshAllSlots()
 			continue;
 		}
 
-		SlotWidget->SetSlotData(IconTexture,InventorySlot.ItemInstance.Count);
+		SlotWidget->SetSlotData(InventorySlot.SlotIndex,IconTexture,InventorySlot.ItemInstance.Count);
+		
+		SlotWidget->LeftMouseButtonClick.AddDynamic(this,&UPackageUserWidget::LeftButtonClick);
+		SlotWidget->RightMouseButtonClick.AddDynamic(this,&UPackageUserWidget::RightButtonClick);
 
 		if (UWrapBoxSlot* WrapSlot = Wrap_Items->AddChildToWrapBox(SlotWidget))
 		{
@@ -76,6 +79,18 @@ void UPackageUserWidget::RefreshAllSlots()
 		}
 	}
 }
+
+//bool UPackageUserWidget::DropItem(FName ItemID, int32 DropCount, FVector DropOrigin)
+//{
+//	if (ItemID.IsNone() || DropCount <= 0 || !PickupActorClass)
+//	{
+//		return false;
+//	}
+//	if ()
+//	{
+//		
+//	}
+//}
 
 void UPackageUserWidget::NativeConstruct()
 {
@@ -108,18 +123,55 @@ void UPackageUserWidget::OnItemRemoved(FName ItemID, int32 RemoveCount)
 	RefreshAllSlots();
 }
 
-UItemDataAsset* UPackageUserWidget::FindItemDataByID(FName ItemID) const
+void UPackageUserWidget::LeftButtonClick(int32 SlotIndex)
 {
-	if (!PackageComp || ItemID.IsNone())
+	if (!PackageComp)
 	{
-		return nullptr;
+		return;
 	}
-	for (UItemDataAsset* Data : PackageComp->ItemDataBase)
+
+	const TArray<FInventorySlot>& SlotsRef = PackageComp->GetSlots();
+	if (!SlotsRef.IsValidIndex(SlotIndex))
 	{
-		if (Data && Data->ItemID == ItemID)
-		{
-			return Data;
-		}
+		return;
 	}
-	return nullptr;
+
+	const FInventorySlot& SlotData = SlotsRef[SlotIndex];
+	if (!SlotData.bOccupied || SlotData.ItemInstance.ItemID.IsNone() || SlotData.ItemInstance.ItemID.IsNone())
+	{
+		return;
+	}
+	if (AActor* TargetActor= GetOwningPlayerPawn())
+	{
+		PackageComp->UseItem(SlotData.ItemInstance.ItemID,TargetActor);
+	}
+}
+
+void UPackageUserWidget::RightButtonClick(int32 SlotIndex)
+{
+	if (!PackageComp)
+	{
+		return;
+	}
+
+	const TArray<FInventorySlot>& SlotsRef = PackageComp->GetSlots();
+	if (!SlotsRef.IsValidIndex(SlotIndex))
+	{
+		return;
+	}
+
+	const FInventorySlot& InventorySlotData = SlotsRef[SlotIndex];
+	if (!InventorySlotData.bOccupied || InventorySlotData.ItemInstance.ItemID.IsNone())
+	{
+		return;
+	}
+
+	const FName ItemID = InventorySlotData.ItemInstance.ItemID;
+	const int32 DropCount = 1;
+	
+	
+	if (APawn* OwnerPawn = GetOwningPlayerPawn())
+	{
+		PackageComp->DropItem(ItemID, DropCount, OwnerPawn->GetActorLocation());
+	}
 }

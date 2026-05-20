@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "PackageComponentCharacter.h"
 #include "UObject/ConstructorHelpers.h"

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -48,6 +48,10 @@ public:
 	//获取交互文本
 	UFUNCTION(BlueprintCallable, Category = "Pickup")
 	FText GetInteractorText() const;
+	
+	//Drop初始化
+	UFUNCTION(BlueprintCallable, Category = "Pickup")
+	void InitWhenDrop(UItemDataAsset* InItemData,int32 InCount);
 	
 protected:
 	// Called when the game starts or when spawned

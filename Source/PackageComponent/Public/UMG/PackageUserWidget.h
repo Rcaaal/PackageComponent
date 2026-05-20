@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -28,6 +28,8 @@ public:
 	UFUNCTION(BlueprintCallable,Category= "PackageUI")
 	void RefreshAllSlots();
 	
+
+	
 protected:
 	//构造完成后调用 初始化UI
 	virtual void NativeConstruct() override;
@@ -46,9 +48,6 @@ protected:
 	//回调 Item移除 （执行全量更新）
 	UFUNCTION()
 	void OnItemRemoved(FName ItemID,int32 RemoveCount);
-	
-	//通过ItemID配置
-	UItemDataAsset* FindItemDataByID(FName ItemID) const;
 	
 	//网格排布
 	UPROPERTY(meta=(BindWidget))
@@ -71,4 +70,12 @@ protected:
 	//绑定背包组件
 	UPROPERTY(BlueprintReadOnly,Category="PackageUI")
 	TObjectPtr<UUserPackageComponent> PackageComp = nullptr;
+	
+	//Slot左键回调
+	UFUNCTION()
+	void LeftButtonClick(int32 SlotIndex);
+	
+	//Slot右键回调
+	UFUNCTION()
+	void RightButtonClick(int32 SlotIndex);
 };
