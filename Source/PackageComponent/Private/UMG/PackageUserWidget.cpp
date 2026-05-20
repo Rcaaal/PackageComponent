@@ -35,6 +35,7 @@ void UPackageUserWidget::RefreshAllSlots()
 		return;
 	}
 	
+	//初始化UI
 	Wrap_Items->ClearChildren();
 	const int32 SafeColumnCount = FMath::Max(1, ColumnCount);
 	const float WrapWidth = SlotSize * SafeColumnCount + SlotSpacing * (SafeColumnCount - 1);
@@ -42,6 +43,27 @@ void UPackageUserWidget::RefreshAllSlots()
 	Wrap_Items->SetInnerSlotPadding(FVector2D(SlotSpacing, SlotSpacing));
 	Wrap_Items->SetOrientation(EOrientation::Orient_Horizontal);
 
+	//定义临时结构体 用于排序
+	struct FTempSort
+	{
+		//真实Slot索引
+		int32 SlotIndex = INDEX_NONE;
+		//类型（使用整型替代枚举方便对比）
+		int32 TypeKey = 0;
+		//优先级
+		int32 Priority = 0;
+		//是否满堆叠 堆叠已满排最前
+		bool bFullStack = false;
+		//当前堆叠数量
+		int32 StackCount = 0;
+		//图标
+		UTexture2D* Icon = nullptr;
+	};
+	
+	//临时排序数组
+	TArray<FTempSort> TempSortSlots;
+	
+	//获取真实插槽数据
 	const TArray<FInventorySlot>& InventorySlots = PackageComp->GetSlots();
 	
 	for (const FInventorySlot& InventorySlot : InventorySlots)
@@ -52,19 +74,59 @@ void UPackageUserWidget::RefreshAllSlots()
 		}
 
 		UItemDataAsset* ItemData = PackageComp->FindItemDataByID(InventorySlot.ItemInstance.ItemID);
-		UTexture2D* IconTexture = nullptr;
-		if (ItemData)
+		//UTexture2D* IconTexture = nullptr;
+		//if (ItemData)
+		//{
+		//	IconTexture = ItemData->Icon.LoadSynchronous();
+		//}
+		if (!ItemData)
 		{
-			IconTexture = ItemData->Icon.LoadSynchronous();
+			continue;
 		}
-
+		
+		FTempSort TempSlot;
+		TempSlot.SlotIndex = InventorySlot.SlotIndex;
+		TempSlot.TypeKey = static_cast<int32>(ItemData->ItemType);
+		TempSlot.Priority = ItemData->UIPriority;
+		TempSlot.StackCount = InventorySlot.ItemInstance.Count;
+		TempSlot.bFullStack = InventorySlot.ItemInstance.Count >= FMath::Max(1, ItemData->MaxStack);
+		TempSlot.Icon = ItemData->Icon.LoadSynchronous();
+		
+		TempSortSlots.Add(MoveTemp(TempSlot));
+	}
+	
+	//排序
+	TempSortSlots.Sort([](const FTempSort& A, const FTempSort& B)
+	{
+		if (A.TypeKey != B.TypeKey)
+		{
+			return A.TypeKey < B.TypeKey;
+		}
+		if (A.Priority != B.Priority)
+		{
+			return A.Priority > B.Priority;
+		}
+		if (A.bFullStack != B.bFullStack)
+		{
+			return A.bFullStack && !B.bFullStack;
+		}
+		if (A.StackCount != B.StackCount)
+		{
+			return A.StackCount > B.StackCount;
+		}
+		return A.SlotIndex < B.SlotIndex;
+	});
+	
+	
+	for (const FTempSort& InventorySlot : TempSortSlots)
+	{
 		UPackageSlotUserWidget* SlotWidget = CreateWidget<UPackageSlotUserWidget>(this,SlotWidgetClass);
 		if (!SlotWidget)
 		{
 			continue;
 		}
 
-		SlotWidget->SetSlotData(InventorySlot.SlotIndex,IconTexture,InventorySlot.ItemInstance.Count);
+		SlotWidget->SetSlotData(InventorySlot.SlotIndex,InventorySlot.Icon,InventorySlot.StackCount);
 		
 		SlotWidget->LeftMouseButtonClick.AddDynamic(this,&UPackageUserWidget::LeftButtonClick);
 		SlotWidget->RightMouseButtonClick.AddDynamic(this,&UPackageUserWidget::RightButtonClick);
@@ -79,18 +141,6 @@ void UPackageUserWidget::RefreshAllSlots()
 		}
 	}
 }
-
-//bool UPackageUserWidget::DropItem(FName ItemID, int32 DropCount, FVector DropOrigin)
-//{
-//	if (ItemID.IsNone() || DropCount <= 0 || !PickupActorClass)
-//	{
-//		return false;
-//	}
-//	if ()
-//	{
-//		
-//	}
-//}
 
 void UPackageUserWidget::NativeConstruct()
 {
